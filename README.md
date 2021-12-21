@@ -110,3 +110,54 @@ containers:
 2. Again, specific for the Docker test image we are using (in #1), we pass in which environment variables we want the container to print values for
 3. Name of the environment variable
 4. By using the special akv2k8s Env Injector convention `<azure-key-vault-secret-name>@azurekeyvault` to reference the AzureKeyVaultSecret `secret-inject` we created earlier. The env-injector will download this secret from Azure Key Vault and inject into the executable running in your Container.
+
+
+## Sync Multi Key Value Secret
+### Sync a multi-key-value secret from Azure Key Vault into a Kubernetes Secret
+
+* Prequisite: You need to have a secret in your Azure Key Vault with a json / yaml as value. Example values:
+
+```yml
+key1: value1
+key2: value2
+key3: value3
+```
+OR
+```json
+{
+  "key1": "value1",
+  "key2": "value2",
+  "key3": "value3"
+}
+```
+1. Create AzureKeyVaultSecret with output:
+```yml
+apiVersion: spv.no/v2beta1
+kind: AzureKeyVaultSecret
+metadata:
+  name: db-config
+spec:
+  vault:
+    name: your-key-vault
+    object:
+      contentType: application/x-json # make sure this matches the content of the secret, can be either 'application/x-json' or 'application/x-yaml'
+      name: db-config
+      type: multi-key-value-secret
+  output:
+    secret:
+      name: db-config
+```
+2. The resulting secret in the cluster will look like this:
+```yml
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: db-config
+data:
+  key1: dmFsdWUx
+  key2: dmFsdWUy
+  key3: dmFsdWUz
+```
+
+
